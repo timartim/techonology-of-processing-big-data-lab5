@@ -1,0 +1,55 @@
+{
+  "model_type": "pyspark.ml.clustering.KMeansModel",
+  "best_k": 2,
+  "best_silhouette": 0.5027784520643853,
+  "feature_cols": [
+    "additives_n",
+    "complete",
+    "completeness",
+    "created_t",
+    "ingredients_from_palm_oil_n",
+    "ingredients_n",
+    "ingredients_percent_analysis",
+    "ingredients_with_specified_percent_n",
+    "ingredients_with_unspecified_percent_n",
+    "ingredients_without_ciqual_codes_n",
+    "known_ingredients_n",
+    "last_modified_t",
+    "last_updated_t",
+    "nova_group",
+    "popularity_key",
+    "rev",
+    "unknown_ingredients_n",
+    "schema_version"
+  ],
+  "imputed_cols": [
+    "additives_n_imp",
+    "complete_imp",
+    "completeness_imp",
+    "created_t_imp",
+    "ingredients_from_palm_oil_n_imp",
+    "ingredients_n_imp",
+    "ingredients_percent_analysis_imp",
+    "ingredients_with_specified_percent_n_imp",
+    "ingredients_with_unspecified_percent_n_imp",
+    "ingredients_without_ciqual_codes_n_imp",
+    "known_ingredients_n_imp",
+    "last_modified_t_imp",
+    "last_updated_t_imp",
+    "nova_group_imp",
+    "popularity_key_imp",
+    "rev_imp",
+    "unknown_ingredients_n_imp",
+    "schema_version_imp"
+  ],
+  "product_cols": [
+    "product_name_langs",
+    "product_name_texts"
+  ],
+  "input_path": "../data/food_small.parquet",
+  "artifacts": {
+    "kmeans_model": "../models/openfoodfacts_kmeans/kmeans_model",
+    "imputer_model": "../models/openfoodfacts_kmeans/imputer_model",
+    "scaler_model": "../models/openfoodfacts_kmeans/scaler_model"
+  }
+}

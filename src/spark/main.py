@@ -21,16 +21,22 @@ from pyspark.ml.evaluation import ClusteringEvaluator
 NUMERIC_TYPES = (DoubleType, FloatType, IntegerType, LongType, ShortType, DecimalType)
 
 
-def build_spark():
+def load_config():
+    config_path = Path(__file__).resolve().parent / "config.json"
+    with open(config_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def build_spark(cfg):
     spark = (
         SparkSession.builder
-        .appName("OpenFoodFacts-KMeans")
-        .master("local[*]")
-        .config("spark.driver.memory", "4g")
-        .config("spark.sql.shuffle.partitions", "8")
+        .appName(cfg["spark"]["app_name"])
+        .master(cfg["spark"]["master"])
+        .config("spark.driver.memory", cfg["spark"]["driver_memory"])
+        .config("spark.sql.shuffle.partitions", cfg["spark"]["shuffle_partitions"])
         .getOrCreate()
     )
-    spark.sparkContext.setLogLevel("WARN")
+    spark.sparkContext.setLogLevel(cfg["spark"]["log_level"])
     return spark
 
 
@@ -72,6 +78,8 @@ def build_product_name_columns(df):
 
 def write_single_csv(df, output_file):
     output_file = Path(output_file)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+
     tmp_dir = output_file.with_suffix("")
 
     if tmp_dir.exists():
@@ -87,15 +95,22 @@ def write_single_csv(df, output_file):
 
 
 def main():
-    spark = build_spark()
+    cfg = load_config()
+    spark = build_spark(cfg)
 
-    input_path = "../data/food_small.parquet"
-    clusters_csv_path = "../artifacts/food_clusters.csv"
-    profiles_csv_path = "../artifacts/food_cluster_profiles.csv"
-    centers_csv_path = "../artifacts/food_cluster_centers.csv"
-    metrics_json_path = "../artifacts/food_metrics.json"
+    data_cfg = cfg["data"]
+    prep_cfg = cfg["preprocessing"]
+    train_cfg = cfg["training"]
 
-    model_root = Path("../models/openfoodfacts_kmeans")
+    input_path = data_cfg["input_path"]
+    clusters_csv_path = Path(data_cfg["clusters_csv_path"])
+    profiles_csv_path = Path(data_cfg["profiles_csv_path"])
+    centers_csv_path = Path(data_cfg["centers_csv_path"])
+    metrics_json_path = Path(data_cfg["metrics_json_path"])
+
+    metrics_json_path.parent.mkdir(parents=True, exist_ok=True)
+
+    model_root = Path(data_cfg["model_root"])
     model_root.mkdir(parents=True, exist_ok=True)
 
     kmeans_model_path = model_root / "kmeans_model"
@@ -122,13 +137,14 @@ def main():
         *[F.count(F.col(c)).alias(c) for c in numeric_cols]
     ).first().asDict()
 
+    min_non_null_ratio = prep_cfg["min_non_null_ratio"]
     feature_cols = [
         c for c in numeric_cols
-        if non_null_counts[c] / total_rows >= 0.9
+        if non_null_counts[c] / total_rows >= min_non_null_ratio
     ]
 
     if not feature_cols:
-        raise ValueError("Нет числовых колонок с долей заполненности не ниже 90%")
+        raise ValueError("Нет числовых колонок с достаточной долей заполненности")
 
     product_exprs, product_col_names = build_product_name_columns(raw)
 
@@ -151,15 +167,14 @@ def main():
         raise ValueError("После удаления константных признаков не осталось колонок")
 
     keep_cols = product_col_names + feature_cols
-
     df = df.select(*keep_cols).dropDuplicates().cache()
 
     total_n = df.count()
-    target_n = 100_000
+    target_n = prep_cfg["target_n"]
 
     if total_n > target_n:
         fraction = target_n / total_n
-        df = df.sample(withReplacement=False, fraction=fraction, seed=42).limit(target_n)
+        df = df.sample(withReplacement=False, fraction=fraction, seed=train_cfg["seed"]).limit(target_n)
 
     working_n = df.count()
 
@@ -171,7 +186,7 @@ def main():
     imputer = Imputer(
         inputCols=feature_cols,
         outputCols=imputed_cols,
-        strategy="median"
+        strategy=prep_cfg["imputer_strategy"]
     )
 
     imputer_model = imputer.fit(df)
@@ -195,16 +210,17 @@ def main():
     prepared = scaler_model.transform(assembled).cache()
 
     prepared_n = prepared.count()
-    max_k = min(8, prepared_n - 1)
+    max_k = min(train_cfg["k_max"], prepared_n - 1)
+    min_k = train_cfg["k_min"]
 
-    if max_k < 2:
+    if max_k < min_k:
         raise ValueError("Недостаточно строк для кластеризации")
 
     evaluator = ClusteringEvaluator(
         featuresCol="features",
         predictionCol="prediction",
-        metricName="silhouette",
-        distanceMeasure="squaredEuclidean"
+        metricName=train_cfg["metric_name"],
+        distanceMeasure=train_cfg["distance_measure"]
     )
 
     best_k = None
@@ -212,12 +228,12 @@ def main():
     best_model = None
     best_predictions = None
 
-    for k in range(2, max_k + 1):
+    for k in range(min_k, max_k + 1):
         kmeans = KMeans(
             featuresCol="features",
             predictionCol="prediction",
             k=k,
-            seed=42
+            seed=train_cfg["seed"]
         )
         model = kmeans.fit(prepared)
         predictions = model.transform(prepared)
@@ -231,7 +247,6 @@ def main():
             best_predictions = predictions
 
     cols_to_save = product_col_names + feature_cols + ["prediction"]
-
     clusters_df = best_predictions.select(*cols_to_save)
 
     agg_exprs = [F.count("*").alias("n")]

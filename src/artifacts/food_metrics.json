@@ -1,0 +1,27 @@
+{
+  "best_k": 2,
+  "best_silhouette": 0.5027784520643853,
+  "rows_total": 100000,
+  "rows_working": 99860,
+  "features_count": 18,
+  "features": [
+    "additives_n",
+    "complete",
+    "completeness",
+    "created_t",
+    "ingredients_from_palm_oil_n",
+    "ingredients_n",
+    "ingredients_percent_analysis",
+    "ingredients_with_specified_percent_n",
+    "ingredients_with_unspecified_percent_n",
+    "ingredients_without_ciqual_codes_n",
+    "known_ingredients_n",
+    "last_modified_t",
+    "last_updated_t",
+    "nova_group",
+    "popularity_key",
+    "rev",
+    "unknown_ingredients_n",
+    "schema_version"
+  ]
+}

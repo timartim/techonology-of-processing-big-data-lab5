@@ -1,0 +1,7 @@
+.venv
+.idea
+src/data
+
+.DS_STORE
+
+*.parquet
