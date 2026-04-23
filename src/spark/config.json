@@ -1,0 +1,30 @@
+{
+  "spark": {
+    "app_name": "OpenFoodFacts-KMeans",
+    "master": "local[*]",
+    "driver_memory": "4g",
+    "shuffle_partitions": "8",
+    "log_level": "WARN"
+  },
+  "data": {
+    "input_path": "../data/food_small.parquet",
+    "clusters_csv_path": "../artifacts/food_clusters.csv",
+    "profiles_csv_path": "../artifacts/food_cluster_profiles.csv",
+    "centers_csv_path": "../artifacts/food_cluster_centers.csv",
+    "metrics_json_path": "../artifacts/food_metrics.json",
+    "predictions_csv_path": "../artifacts/food_predictions.csv",
+    "model_root": "../models/openfoodfacts_kmeans"
+  },
+  "preprocessing": {
+    "min_non_null_ratio": 0.9,
+    "target_n": 100000,
+    "imputer_strategy": "median"
+  },
+  "training": {
+    "k_min": 2,
+    "k_max": 8,
+    "seed": 42,
+    "metric_name": "silhouette",
+    "distance_measure": "squaredEuclidean"
+  }
+}
