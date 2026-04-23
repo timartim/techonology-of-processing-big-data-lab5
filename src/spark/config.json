@@ -12,6 +12,7 @@
     "profiles_csv_path": "../artifacts/food_cluster_profiles.csv",
     "centers_csv_path": "../artifacts/food_cluster_centers.csv",
     "metrics_json_path": "../artifacts/food_metrics.json",
+    "predictions_csv_path": "../artifacts/food_predictions.csv",
     "model_root": "../models/openfoodfacts_kmeans"
   },
   "preprocessing": {
@@ -23,7 +24,7 @@
     "k_min": 2,
     "k_max": 8,
     "seed": 42,
-    "distance_measure": "squaredEuclidean",
-    "metric_name": "silhouette"
+    "metric_name": "silhouette",
+    "distance_measure": "squaredEuclidean"
   }
 }

@@ -1,6 +1,7 @@
 {
   "best_k": 2,
-  "best_silhouette": 0.5027784520643853,
+  "best_score": 0.5027784520643853,
+  "metric_name": "silhouette",
   "rows_total": 100000,
   "rows_working": 99860,
   "features_count": 18,

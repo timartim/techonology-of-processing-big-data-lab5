@@ -1,7 +1,8 @@
 {
   "model_type": "pyspark.ml.clustering.KMeansModel",
   "best_k": 2,
-  "best_silhouette": 0.5027784520643853,
+  "best_score": 0.5027784520643853,
+  "metric_name": "silhouette",
   "feature_cols": [
     "additives_n",
     "complete",
@@ -46,10 +47,10 @@
     "product_name_langs",
     "product_name_texts"
   ],
-  "input_path": "../data/food_small.parquet",
+  "input_path": "/Users/artemij/megashool/techonology-of-processing-big-data-lab5/src/data/food_small.parquet",
   "artifacts": {
-    "kmeans_model": "../models/openfoodfacts_kmeans/kmeans_model",
-    "imputer_model": "../models/openfoodfacts_kmeans/imputer_model",
-    "scaler_model": "../models/openfoodfacts_kmeans/scaler_model"
+    "kmeans_model": "/Users/artemij/megashool/techonology-of-processing-big-data-lab5/src/models/openfoodfacts_kmeans/kmeans_model",
+    "imputer_model": "/Users/artemij/megashool/techonology-of-processing-big-data-lab5/src/models/openfoodfacts_kmeans/imputer_model",
+    "scaler_model": "/Users/artemij/megashool/techonology-of-processing-big-data-lab5/src/models/openfoodfacts_kmeans/scaler_model"
   }
 }
