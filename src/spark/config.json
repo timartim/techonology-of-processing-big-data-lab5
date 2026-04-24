@@ -22,7 +22,7 @@
   },
   "training": {
     "k_min": 2,
-    "k_max": 8,
+    "k_max": 90,
     "seed": 42,
     "metric_name": "silhouette",
     "distance_measure": "squaredEuclidean"

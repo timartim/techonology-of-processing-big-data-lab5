@@ -1,7 +1,8 @@
 .venv
 .idea
-src/data
+src/data/food.parquet
 
 .DS_STORE
 
 *.parquet
+*.pyc

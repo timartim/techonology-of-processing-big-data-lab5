@@ -7,9 +7,9 @@ from pyspark.ml.feature import ImputerModel, StandardScalerModel
 from pyspark.sql import functions as F
 
 from app_config import AppConfig
-from io_utils import write_single_csv, save_json
+from artifact_writer import ArtifactWriter
 from preprocessing import FoodPreprocessor
-from spark_session import build_spark
+from spark_session import SparkManager
 
 
 class FoodClusterService:
@@ -56,7 +56,14 @@ class FoodClusterService:
         best_model = None
         best_predictions = None
 
+        sc = prepared.sparkSession.sparkContext
+
         for k in range(min_k, max_k + 1):
+            sc.setJobGroup(
+                groupId=f"kmeans-k-{k}",
+                description=f"Fit and evaluate KMeans for k={k}"
+            )
+
             kmeans = KMeans(
                 featuresCol="features",
                 predictionCol="prediction",
@@ -100,7 +107,7 @@ class FoodClusterService:
         return spark.createDataFrame(centers_rows).orderBy("prediction")
 
     def train(self):
-        spark = build_spark(self.cfg.spark)
+        spark = SparkManager(self.cfg.spark).create_session()
         try:
             input_path = self._resolve(self.cfg.data.input_path)
             clusters_csv_path = self._resolve(self.cfg.data.clusters_csv_path)
@@ -126,9 +133,9 @@ class FoodClusterService:
             profiles_df = self._build_profiles_df(best_predictions, feature_cols)
             centers_df = self._build_centers_df(spark, best_model, scaler_model, feature_cols)
 
-            write_single_csv(clusters_df, clusters_csv_path)
-            write_single_csv(profiles_df, profiles_csv_path)
-            write_single_csv(centers_df, centers_csv_path)
+            ArtifactWriter.write_single_csv(clusters_df, clusters_csv_path)
+            ArtifactWriter.write_single_csv(profiles_df, profiles_csv_path)
+            ArtifactWriter.write_single_csv(centers_df, centers_csv_path)
 
             metrics = {
                 "best_k": int(best_k),
@@ -139,7 +146,7 @@ class FoodClusterService:
                 "features_count": int(len(feature_cols)),
                 "features": feature_cols,
             }
-            save_json(metrics, metrics_json_path)
+            ArtifactWriter.save_json(metrics, metrics_json_path)
 
             paths = self._model_paths()
             best_model.write().overwrite().save(str(paths["kmeans_model"]))
@@ -161,7 +168,7 @@ class FoodClusterService:
                     "scaler_model": str(paths["scaler_model"]),
                 },
             }
-            save_json(model_info, paths["model_info"])
+            ArtifactWriter.save_json(model_info, paths["model_info"])
 
             print(f"Сохранен файл: {clusters_csv_path}")
             print(f"Сохранен файл: {profiles_csv_path}")
@@ -175,7 +182,7 @@ class FoodClusterService:
             spark.stop()
 
     def predict(self, model_path: str, input_path: str | None = None, output_path: str | None = None):
-        spark = build_spark(self.cfg.spark)
+        spark = SparkManager(self.cfg.spark).create_session()
         try:
             paths = self._model_paths(model_path)
 
@@ -212,8 +219,9 @@ class FoodClusterService:
             cols_to_save = product_cols + feature_cols + ["prediction"]
             predictions_df = predictions.select(*cols_to_save)
 
-            write_single_csv(predictions_df, resolved_output)
+            ArtifactWriter.write_single_csv(predictions_df, resolved_output)
 
             print(f"Сохранен файл с предсказаниями: {resolved_output}")
         finally:
+            pass
             spark.stop()
